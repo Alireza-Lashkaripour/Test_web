@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Input Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 2em auto; padding: 1em; border: 1px solid #ddd; }
+        h2 { color: #333; }
+        label { display: block; margin-top: 1em; }
+        textarea, select, button { width: 100%; margin-top: 0.5em; padding: 0.5em; }
+    </style>
+</head>
+<body>
+    <h2>Quantum Input Generator</h2>
+    <form id="inputForm">
+        <label for="geometry">Molecular Geometry (XYZ format):</label>
+        <textarea id="geometry" rows="8" placeholder="Paste XYZ geometry here"></textarea>
+
+        <label for="calculationType">Calculation Type:</label>
+        <select id="calculationType">
+            <option value="Energy">Energy</option>
+            <option value="Optimization">Optimization</option>
+            <option value="Frequency">Frequency</option>
+        </select>
+
+        <label for="version">Software Version:</label>
+        <select id="version">
+            <option value="v1.0">v1.0</option>
+            <option value="v2.0">v2.0</option>
+        </select>
+
+        <button type="button" onclick="generateInputFile()">Generate Input File</button>
+    </form>
+
+    <a id="downloadLink" style="display: none;">Download Input File</a>
+
+    <script>
+        function generateInputFile() {
+            const geometry = document.getElementById("geometry").value;
+            const calculationType = document.getElementById("calculationType").value;
+            const version = document.getElementById("version").value;
+
+            if (!geometry) {
+                alert("Please enter the molecular geometry.");
+                return;
+            }
+
+            const inputContent = `# Quantum Package Input
+Version: ${version}
+Calculation Type: ${calculationType}
+Geometry:
+${geometry}`;
+
+            const blob = new Blob([inputContent], { type: "text/plain" });
+            const url = URL.createObjectURL(blob);
+            const downloadLink = document.getElementById("downloadLink");
+
+            downloadLink.href = url;
+            downloadLink.download = "input_file.txt";
+            downloadLink.style.display = "block";
+            downloadLink.textContent = "Download Input File";
+        }
+    </script>
+</body>
+</html>
