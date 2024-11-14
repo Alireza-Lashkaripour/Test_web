@@ -4,240 +4,376 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OpenQP Input Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.6/ace.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; display: flex; height: 100vh; margin: 0; background-color: #f0f4f8; color: #333; }
-        .container { display: flex; flex-direction: row; width: 100%; }
-        .panel { padding: 1em; overflow-y: auto; }
-        .left-panel { width: 50%; border-right: 2px solid #ddd; background-color: #fff; }
-        .right-panel { width: 50%; background-color: #f7f9fc; padding: 2em; }
-        h2, h3 { color: #2a3d5b; }
-        label { display: block; margin-top: 1em; font-weight: bold; }
-        textarea, select, input { width: 100%; margin-top: 0.5em; padding: 0.5em; font-size: 1em; }
-        button { margin-top: 1em; padding: 0.7em 1em; font-size: 1em; background-color: #2a3d5b; color: #fff; border: none; cursor: pointer; }
-        button:hover { background-color: #1e2d47; }
-        #inputPreview { white-space: pre-wrap; font-family: monospace; background-color: #e8eef5; padding: 1em; border-radius: 5px; height: 300px; resize: vertical; }
-        #downloadLinks { margin-top: 1em; }
-        #downloadLinks a { display: block; color: #2a3d5b; text-decoration: none; font-weight: bold; margin-top: 5px; }
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --background-color: #ecf0f1;
+            --panel-color: #ffffff;
+            --border-radius: 8px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--background-color);
+            color: var(--primary-color);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+            padding: 20px;
+            background: var(--panel-color);
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .container {
+            display: flex;
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .left-panel, .right-panel {
+            flex: 1;
+            background: var(--panel-color);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .geometry-input {
+            width: 100%;
+            height: 200px;
+            font-family: monospace;
+            margin-bottom: 20px;
+            resize: vertical;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            padding: 10px;
+        }
+
+        .options-panel {
+            display: grid;
+            gap: 15px;
+        }
+
+        .option-group {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: var(--border-radius);
+            border: 1px solid #e9ecef;
+        }
+
+        .option-group h3 {
+            margin-top: 0;
+            color: var(--secondary-color);
+            border-bottom: 2px solid var(--secondary-color);
+            padding-bottom: 5px;
+        }
+
+        select, input, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-top: 4px;
+            font-size: 14px;
+        }
+
+        select:focus, input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .editor-container {
+            height: 500px;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            margin-bottom: 15px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .button {
+            background: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .button:hover {
+            background: #2980b9;
+        }
+
+        .button.save {
+            background: #27ae60;
+        }
+
+        .button.save:hover {
+            background: #219a52;
+        }
+
+        .template-selector {
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
+    <div class="header">
+        <h1>OpenQP Input Generator</h1>
+    </div>
+
     <div class="container">
-        <!-- Left Panel: Geometry Input and Options -->
-        <div class="panel left-panel">
-            <h2>OpenQP Input Generator</h2>
+        <div class="left-panel">
+            <div class="template-selector">
+                <label>Load Template:
+                    <select id="template-selector" onchange="loadTemplate()">
+                        <option value="">Custom Input</option>
+                        <option value="rhf-dft">RHF DFT Energy</option>
+                        <option value="tdhf">TDHF Energy</option>
+                        <option value="mrsf-hessian">MRSF-TDDFT Hessian</option>
+                        <option value="mrsf-meci">MRSF-TDDFT MECI</option>
+                        <option value="rhf-grad">RHF DFT Gradient</option>
+                    </select>
+                </label>
+            </div>
 
-            <!-- Geometry Input -->
-            <label for="geometry">Molecular Geometry (XYZ format):</label>
-            <textarea id="geometry" rows="6" placeholder="Paste XYZ geometry here"></textarea>
+            <h2>Geometry Input</h2>
+            <textarea id="geometry-input" class="geometry-input" placeholder="Paste your XYZ coordinates here..."></textarea>
             
-            <!-- System Name -->
-            <label for="systemName">System Name:</label>
-            <input type="text" id="systemName" placeholder="geo">
+            <div class="options-panel">
+                <div class="option-group">
+                    <h3>Basic Settings</h3>
+                    <label>
+                        Geometry File Name:
+                        <input type="text" id="geo-filename" value="geo.xyz">
+                    </label>
+                    <label>
+                        Charge:
+                        <input type="number" id="charge" value="0">
+                    </label>
+                    <label>
+                        Run Type:
+                        <select id="runtype">
+                            <option value="energy">Energy</option>
+                            <option value="grad">Gradient</option>
+                            <option value="hess">Hessian</option>
+                            <option value="optimize">Optimize</option>
+                            <option value="meci">MECI</option>
+                        </select>
+                    </label>
+                </div>
 
-            <!-- Calculation Template Selection -->
-            <label for="calcType">Calculation Template:</label>
-            <select id="calcType" onchange="updateInputPreview()">
-                <option value="rhf_dft_energy">RHF DFT Energy</option>
-                <option value="tdhf_energy">TDHF Energy</option>
-                <option value="mrsf_tdhf_hess">MRSF-TDDFT Numerical Hessian</option>
-                <option value="meci_optimization">MRSF-TDDFT MECI Optimization</option>
-                <option value="rhf_dft_grad">RHF DFT Gradient</option>
-            </select>
+                <div class="option-group">
+                    <h3>Method Settings</h3>
+                    <label>
+                        Basis Set:
+                        <select id="basis">
+                            <option value="6-31g(d)">6-31G(d)</option>
+                            <option value="6-31g">6-31G</option>
+                            <option value="6-311g">6-311G</option>
+                            <option value="6-311g(d)">6-311G(d)</option>
+                            <option value="cc-pvdz">cc-pVDZ</option>
+                            <option value="cc-pvtz">cc-pVTZ</option>
+                            <option value="aug-cc-pvdz">aug-cc-pVDZ</option>
+                            <option value="sto-3g">STO-3G</option>
+                        </select>
+                    </label>
+                    <label>
+                        Functional:
+                        <select id="functional">
+                            <option value="bhhlyp">BHHLYP</option>
+                            <option value="b3lyp">B3LYP</option>
+                            <option value="pbe0">PBE0</option>
+                            <option value="cam-b3lyp">CAM-B3LYP</option>
+                            <option value="wb97x">ωB97X</option>
+                        </select>
+                    </label>
+                    <label>
+                        Method:
+                        <select id="method">
+                            <option value="tdhf">TDHF</option>
+                            <option value="hf">HF</option>
+                            <option value="dft">DFT</option>
+                        </select>
+                    </label>
+                </div>
 
-            <!-- Calculation Options -->
-            <h3>Options</h3>
-            <label for="charge">Charge:</label>
-            <input type="number" id="charge" value="0">
+                <div class="option-group">
+                    <h3>SCF Settings</h3>
+                    <label>
+                        Multiplicity:
+                        <input type="number" id="multiplicity" value="1" min="1">
+                    </label>
+                    <label>
+                        SCF Type:
+                        <select id="scf-type">
+                            <option value="rhf">RHF</option>
+                            <option value="rohf">ROHF</option>
+                            <option value="uhf">UHF</option>
+                            <option value="rks">RKS</option>
+                            <option value="uks">UKS</option>
+                        </select>
+                    </label>
+                    <label>
+                        Max Iterations:
+                        <input type="number" id="scf-maxit" value="50" min="1">
+                    </label>
+                </div>
 
-            <label for="basis">Basis Set:</label>
-            <select id="basis">
-                <option value="6-31g(d)">6-31G(d)</option>
-                <option value="cc-pVDZ">cc-pVDZ</option>
-                <option value="cc-pVTZ">cc-pVTZ</option>
-            </select>
+                <div class="option-group">
+                    <h3>TDHF Settings</h3>
+                    <label>
+                        TDHF Type:
+                        <select id="tdhf-type">
+                            <option value="mrsf">MRSF</option>
+                            <option value="sf">SF</option>
+                        </select>
+                    </label>
+                    <label>
+                        Number of States:
+                        <input type="number" id="nstate" value="3" min="1">
+                    </label>
+                </div>
 
-            <label for="functional">Functional:</label>
-            <select id="functional">
-                <option value="bhhlyp">BHHLYP</option>
-                <option value="pbe">PBE</option>
-                <option value="b3lyp">B3LYP</option>
-            </select>
+                <div class="option-group">
+                    <h3>Optimization Settings</h3>
+                    <label>
+                        Optimizer:
+                        <select id="optimizer">
+                            <option value="bfgs">BFGS</option>
+                            <option value="lbfgs">L-BFGS</option>
+                        </select>
+                    </label>
+                    <label>
+                        Max Iterations:
+                        <input type="number" id="opt-maxit" value="50" min="1">
+                    </label>
+                    <label>
+                        Energy Shift:
+                        <input type="text" id="energy-shift" value="1e-5">
+                    </label>
+                    <label>
+                        Energy Gap:
+                        <input type="text" id="energy-gap" value="1e-4">
+                    </label>
+                </div>
 
-            <label for="multiplicity">Multiplicity:</label>
-            <input type="number" id="multiplicity" value="1">
-
-            <label for="nstate">NState (for TDHF calculations):</label>
-            <input type="number" id="nstate" value="3">
-
-            <button type="button" onclick="updateInputPreview()">Generate Input</button>
-            <button type="button" onclick="downloadFiles()">Save Input & Geometry</button>
+                <div class="option-group">
+                    <h3>DFT Grid Settings</h3>
+                    <label>
+                        Radial Type:
+                        <select id="rad-type">
+                            <option value="becke">Becke</option>
+                            <option value="mura">Mura-Knowles</option>
+                        </select>
+                    </label>
+                </div>
+            </div>
         </div>
 
-        <!-- Right Panel: Real-Time Input Preview -->
-        <div class="panel right-panel">
+        <div class="right-panel">
             <h2>Generated Input</h2>
-            <textarea id="inputPreview" contenteditable="true">
-# OpenQP Input Preview
-            </textarea>
-            <div id="downloadLinks">
-                <a id="downloadInputLink" href="#" download="input_file.txt">Download Input File</a>
-                <a id="downloadGeoLink" href="#" download="geo.xyz">Download Geometry File</a>
+            <div id="editor" class="editor-container"></div>
+            <div class="button-group">
+                <button class="button" onclick="copyToClipboard()">Copy to Clipboard</button>
+                <button class="button save" onclick="saveFiles()">Save Files</button>
             </div>
         </div>
     </div>
 
     <script>
-        function getInputTemplate(template) {
-            const systemName = document.getElementById("systemName").value || "geo";
-            const charge = document.getElementById("charge").value;
-            const basis = document.getElementById("basis").value;
-            const functional = document.getElementById("functional").value;
-            const multiplicity = document.getElementById("multiplicity").value;
-            const nstate = document.getElementById("nstate").value;
+        // Initialize ACE editor
+        const editor = ace.edit("editor");
+        editor.setTheme("ace/theme/monokai");
+        editor.session.setMode("ace/mode/text");
+        editor.setShowPrintMargin(false);
+        editor.setOptions({
+            fontSize: "14px"
+        });
 
-            // Templates for each calculation type
-            switch(template) {
-                case "rhf_dft_energy":
-                    return `
-[input]
-system=${systemName}.xyz
-charge=${charge}
-runtype=energy
-functional=${functional}
-basis=${basis}
-method=hf
+        // Store all input elements
+        const inputs = {
+            geometry: document.getElementById('geometry-input'),
+            geoFilename: document.getElementById('geo-filename'),
+            charge: document.getElementById('charge'),
+            runtype: document.getElementById('runtype'),
+            basis: document.getElementById('basis'),
+            functional: document.getElementById('functional'),
+            method: document.getElementById('method'),
+            multiplicity: document.getElementById('multiplicity'),
+            scfType: document.getElementById('scf-type'),
+            scfMaxit: document.getElementById('scf-maxit'),
+            tdhfType: document.getElementById('tdhf-type'),
+            nstate: document.getElementById('nstate'),
+            optimizer: document.getElementById('optimizer'),
+            optMaxit: document.getElementById('opt-maxit'),
+            energyShift: document.getElementById('energy-shift'),
+            energyGap: document.getElementById('energy-gap'),
+            radType: document.getElementById('rad-type')
+        };
 
-[guess]
-type=huckel
-
-[scf]
-multiplicity=${multiplicity}
-type=rhf
-
-[dftgrid]
-rad_type=becke
-                    `;
-                case "tdhf_energy":
-                    return `
-[input]
-system=${systemName}.xyz
-charge=${charge}
-runtype=energy
-basis=${basis}
-method=tdhf
-
-[guess]
-type=huckel
-
-[scf]
-multiplicity=${multiplicity}
-type=rhf
-
-[tdhf]
-nstate=${nstate}
-                    `;
-                case "mrsf_tdhf_hess":
-                    return `
-[input]
-system=${systemName}.xyz
-charge=${charge}
-functional=${functional}
-basis=${basis}
-runtype=hess
-method=tdhf
-
-[scf]
-type=rohf
-multiplicity=3
-
-[tdhf]
-type=mrsf
-nstate=2
-
-[hess]
-state=1
-                    `;
-                case "meci_optimization":
-                    return `
-[input]
-system=${systemName}.xyz
-runtype=meci
-functional=${functional}
-charge=${charge}
-method=tdhf
-basis=${basis}
-
-[scf]
-type=rohf
-maxit=50
-multiplicity=${multiplicity}
-
-[tdhf]
-type=mrsf
-nstate=5
-
-[optimize]
-optimizer=bfgs
-maxit=50
-istate=1
-jstate=2
-energy_shift=1e-5
-energy_gap=1e-4
-rmsd_grad=5e-4
-max_grad=1e-3
-                    `;
-                case "rhf_dft_grad":
-                    return `
-[input]
-system=${systemName}.xyz
-charge=${charge}
-basis=${basis}
-runtype=grad
-functional=${functional}
-method=hf
-
-[guess]
-type=huckel
-
-[scf]
-multiplicity=${multiplicity}
-type=rhf
-
-[properties]
-grad=0
-
-[dftgrid]
-rad_type=becke
-                    `;
-            }
-        }
-
-        function updateInputPreview() {
-            const template = document.getElementById("calcType").value;
-            const inputContent = getInputTemplate(template).trim();
-            document.getElementById("inputPreview").value = inputContent;
-        }
-
-        function downloadFiles() {
-            // Download the input file
-            const systemName = document.getElementById("systemName").value || "geo";
-            const inputContent = document.getElementById("inputPreview").value;
-            const inputBlob = new Blob([inputContent], { type: "text/plain" });
-            const inputUrl = URL.createObjectURL(inputBlob);
-            const inputLink = document.getElementById("downloadInputLink");
-            inputLink.href = inputUrl;
-            inputLink.download = `${systemName}_input.txt`;
-            inputLink.style.display = "block";
-
-            // Download the geometry file
-            const geometry = document.getElementById("geometry").value.trim();
-            const geoBlob = new Blob([geometry], { type: "text/plain" });
-            const geoUrl = URL.createObjectURL(geoBlob);
-            const geoLink = document.getElementById("downloadGeoLink");
-            geoLink.href = geoUrl;
-            geoLink.download = `${systemName}.xyz`;
-            geoLink.style.display = "block";
-        }
-    </script>
-</body>
-</html>
+        // Template definitions
+        const templates = {
+            'rhf-dft': {
+                geometry: '8 0.000000000 0.000000000 -0.041061554\n1 -0.533194329 0.533194329 -0.614469223\n1 0.533194329 -0.533194329 -0.614469223',
+                charge: '0',
+                runtype: 'energy',
+                functional: 'bhhlyp',
+                basis: '6-31g(d)',
+                method: 'hf',
+                multiplicity: '1',
+                scfType: 'rhf'
+            },
+            'tdhf': {
+                geometry: '8 0.000000000 0.000000000 -0.041061554\n1 -0.533194329 0.533194329 -0.614469223\n1 0.533194329 -0.533194329 -0.614469223',
+                charge: '0',
+                runtype: 'energy',
+                basis: '6-31g(d)',
+                method: 'tdhf',
+                multiplicity: '1',
+                scfType: 'rhf',
+                nstate: '3'
+            },
+            'mrsf-hessian': {
+                geometry: 'O -0.0000000000 0.0000000000 -0.0410615540\nH -0.5331943294 0.5331943294 -0.6144692230\nH 0.5331943294 -0.5331943294 -0.6144692230',
+                charge: '0',
+                functional: 'bhhlyp',
+                basis: '6-31g(d)',
+                runtype: 'hess',
+                method: 'tdhf',
+                scfType: 'rohf',
+                multiplicity: '3',
+                tdhfType: 'mrsf',
+                nstate: '2'
+            },
+            'mrsf-meci': {
+                geometry: 'C -1.6699351346837055 0.1537249235528157 -1.5459803491111643\nC -1.8079415266835852 -0.0386075716896284 -0.1602069788110266\nH -2.6609567768367581 0.2572290722092156 -2.0290359598415040\nH -1.2898503996116444 -0.7568524635289917 -2.0470428696820342\nH -1.3096398768036397 0.6557118321425524 0.5396052278505126\nH -2.3820842951209360 -0.7983813277099963 0.4308517619153288',
+                runtype: 'meci',
+                functional: 'bhhlyp',
+                charge: '0',
+                method: 'tdhf',
+                basis: '6-31g
