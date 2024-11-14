@@ -16,7 +16,8 @@
         button { margin-top: 1em; padding: 0.7em 1em; font-size: 1em; background-color: #2a3d5b; color: #fff; border: none; cursor: pointer; }
         button:hover { background-color: #1e2d47; }
         #inputPreview { white-space: pre-wrap; font-family: monospace; background-color: #e8eef5; padding: 1em; border-radius: 5px; height: 300px; resize: vertical; }
-        #downloadLink { display: block; margin-top: 1em; color: #2a3d5b; text-decoration: none; font-weight: bold; }
+        #downloadLinks { margin-top: 1em; }
+        #downloadLinks a { display: block; color: #2a3d5b; text-decoration: none; font-weight: bold; margin-top: 5px; }
     </style>
 </head>
 <body>
@@ -69,7 +70,7 @@
             <input type="number" id="nstate" value="3">
 
             <button type="button" onclick="updateInputPreview()">Generate Input</button>
-            <button type="button" onclick="downloadInputFile()">Save Input & Geometry</button>
+            <button type="button" onclick="downloadFiles()">Save Input & Geometry</button>
         </div>
 
         <!-- Right Panel: Real-Time Input Preview -->
@@ -78,7 +79,10 @@
             <textarea id="inputPreview" contenteditable="true">
 # OpenQP Input Preview
             </textarea>
-            <a id="downloadLink" href="#" download="input_file.txt">Download Input File</a>
+            <div id="downloadLinks">
+                <a id="downloadInputLink" href="#" download="input_file.txt">Download Input File</a>
+                <a id="downloadGeoLink" href="#" download="geo.xyz">Download Geometry File</a>
+            </div>
         </div>
     </div>
 
@@ -214,15 +218,25 @@ rad_type=becke
             document.getElementById("inputPreview").value = inputContent;
         }
 
-        function downloadInputFile() {
-            const geometry = document.getElementById("geometry").value.trim();
+        function downloadFiles() {
+            // Download the input file
+            const systemName = document.getElementById("systemName").value || "geo";
             const inputContent = document.getElementById("inputPreview").value;
-            const blob = new Blob([inputContent + "\n\nGeometry:\n" + geometry], { type: "text/plain" });
-            const url = URL.createObjectURL(blob);
-            const downloadLink = document.getElementById("downloadLink");
-            downloadLink.href = url;
-            downloadLink.download = `${document.getElementById("systemName").value || "geo"}_input.txt`;
-            downloadLink.style.display = "block";
+            const inputBlob = new Blob([inputContent], { type: "text/plain" });
+            const inputUrl = URL.createObjectURL(inputBlob);
+            const inputLink = document.getElementById("downloadInputLink");
+            inputLink.href = inputUrl;
+            inputLink.download = `${systemName}_input.txt`;
+            inputLink.style.display = "block";
+
+            // Download the geometry file
+            const geometry = document.getElementById("geometry").value.trim();
+            const geoBlob = new Blob([geometry], { type: "text/plain" });
+            const geoUrl = URL.createObjectURL(geoBlob);
+            const geoLink = document.getElementById("downloadGeoLink");
+            geoLink.href = geoUrl;
+            geoLink.download = `${systemName}.xyz`;
+            geoLink.style.display = "block";
         }
     </script>
 </body>
