@@ -3,100 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quantum Chemistry Input Generator</title>
+    <title>OpenQP Input Generator</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 600px; margin: 2em auto; padding: 1em; border: 1px solid #ddd; }
+        body { font-family: Arial, sans-serif; display: flex; height: 100vh; margin: 0; }
+        .container { display: flex; flex-direction: row; width: 100%; }
+        .panel { padding: 1em; border-right: 1px solid #ddd; overflow-y: auto; }
+        .left-panel { width: 50%; }
+        .right-panel { width: 50%; background-color: #f9f9f9; padding: 1em; }
         h2 { color: #333; }
-        label { display: block; margin-top: 1em; }
-        select, textarea, button, input { width: 100%; margin-top: 0.5em; padding: 0.5em; }
-        #downloadLink { margin-top: 1em; display: none; }
+        label { display: block; margin-top: 1em; font-weight: bold; }
+        textarea, select, input { width: 100%; margin-top: 0.5em; padding: 0.5em; }
+        #inputPreview { white-space: pre-wrap; font-family: monospace; }
     </style>
 </head>
 <body>
-    <h2>Quantum Chemistry Input Generator</h2>
-    <form id="inputForm">
-        <label for="geometry">Molecular Geometry (XYZ format):</label>
-        <textarea id="geometry" rows="6" placeholder="Paste XYZ geometry here"></textarea>
+    <div class="container">
+        <!-- Left Panel: Geometry Input and Options -->
+        <div class="panel left-panel">
+            <h2>OpenQP Input Generator</h2>
+            
+            <!-- Geometry Input -->
+            <label for="geometry">Molecular Geometry (XYZ format):</label>
+            <textarea id="geometry" rows="8" placeholder="Paste XYZ geometry here"></textarea>
+            
+            <!-- System Name -->
+            <label for="systemName">System Name:</label>
+            <input type="text" id="systemName" placeholder="geo">
 
-        <label for="calculationType">Calculation Type:</label>
-        <select id="calculationType">
-            <option value="SP">Single Point (SP)</option>
-            <option value="OPT">Optimization (OPT)</option>
-            <option value="FREQ">Frequency (FREQ)</option>
-        </select>
+            <!-- Calculation Options -->
+            <h3>Options</h3>
+            <label for="charge">Charge:</label>
+            <input type="number" id="charge" value="0">
 
-        <label for="basisSet">Basis Set:</label>
-        <select id="basisSet">
-            <option value="STO-3G">STO-3G</option>
-            <option value="6-31G">6-31G</option>
-            <option value="6-31G*">6-31G*</option>
-            <option value="cc-pVDZ">cc-pVDZ</option>
-        </select>
+            <label for="runtype">Run Type:</label>
+            <select id="runtype">
+                <option value="energy">Single Point Energy</option>
+            </select>
 
-        <label for="functional">Functional:</label>
-        <select id="functional">
-            <option value="HF">Hartree-Fock (HF)</option>
-            <option value="B3LYP">B3LYP</option>
-            <option value="PBE">PBE</option>
-            <option value="M06-2X">M06-2X</option>
-        </select>
+            <label for="basis">Basis Set:</label>
+            <select id="basis">
+                <option value="6-31g(d)">6-31G(d)</option>
+            </select>
 
-        <label for="multiplicity">Multiplicity:</label>
-        <select id="multiplicity">
-            <option value="1">Singlet (1)</option>
-            <option value="2">Doublet (2)</option>
-            <option value="3">Triplet (3)</option>
-        </select>
+            <label for="functional">Functional:</label>
+            <select id="functional">
+                <option value="bhhlyp">BHHLYP</option>
+            </select>
 
-        <label for="charge">Charge:</label>
-        <input type="number" id="charge" placeholder="0" value="0">
+            <label for="method">Method:</label>
+            <select id="method">
+                <option value="tdhf">TDHF</option>
+            </select>
 
-        <button type="button" onclick="generateInputFile()">Generate Input File</button>
-    </form>
+            <label for="multiplicity">Multiplicity:</label>
+            <select id="multiplicity">
+                <option value="3">3</option>
+            </select>
 
-    <a id="downloadLink">Download Input File</a>
+            <label for="tdhfType">TDHF Type:</label>
+            <select id="tdhfType">
+                <option value="mrsf">MRSF</option>
+            </select>
+
+            <label for="nstate">NState:</label>
+            <input type="number" id="nstate" value="3">
+
+            <button type="button" onclick="updateInputPreview()">Generate Input</button>
+        </div>
+
+        <!-- Right Panel: Real-Time Input Preview -->
+        <div class="panel right-panel">
+            <h2>Generated Input</h2>
+            <pre id="inputPreview">
+# OpenQP Input Preview
+            </pre>
+        </div>
+    </div>
 
     <script>
-        function generateInputFile() {
+        function updateInputPreview() {
+            // Retrieve user inputs
             const geometry = document.getElementById("geometry").value.trim();
-            const calculationType = document.getElementById("calculationType").value;
-            const basisSet = document.getElementById("basisSet").value;
-            const functional = document.getElementById("functional").value;
-            const multiplicity = document.getElementById("multiplicity").value;
+            const systemName = document.getElementById("systemName").value || "geo";
             const charge = document.getElementById("charge").value;
+            const runtype = document.getElementById("runtype").value;
+            const basis = document.getElementById("basis").value;
+            const functional = document.getElementById("functional").value;
+            const method = document.getElementById("method").value;
+            const multiplicity = document.getElementById("multiplicity").value;
+            const tdhfType = document.getElementById("tdhfType").value;
+            const nstate = document.getElementById("nstate").value;
 
-            if (!geometry) {
-                alert("Please enter the molecular geometry.");
-                return;
-            }
+            // Default input format for single-point energy calculation
+            const inputTemplate = `
+[input]
+system=${systemName}.xyz
+charge=${charge}
+runtype=${runtype}
+basis=${basis}
+functional=${functional}
+method=${method}
 
-            const inputContent = `
-# Quantum Chemistry Input File
-# Calculation Type: ${calculationType}
-# Functional: ${functional}
-# Basis Set: ${basisSet}
-# Charge: ${charge}
-# Multiplicity: ${multiplicity}
+[guess]
+type=huckel
 
-%Chk=calculation.chk
-%Mem=1GB
-%NProcShared=4
-# ${functional}/${basisSet} ${calculationType}
+[scf]
+multiplicity=${multiplicity}
+type=rohf
 
-Molecule specification
-Charge = ${charge}  Multiplicity = ${multiplicity}
-${geometry}
+[tdhf]
+type=${tdhfType}
+nstate=${nstate}
+            `.trim();
 
-`;
-
-            const blob = new Blob([inputContent.trim()], { type: "text/plain" });
-            const url = URL.createObjectURL(blob);
-            const downloadLink = document.getElementById("downloadLink");
-
-            downloadLink.href = url;
-            downloadLink.download = "input_file.com";
-            downloadLink.style.display = "block";
-            downloadLink.textContent = "Download Input File";
+            // Update the input preview
+            document.getElementById("inputPreview").textContent = inputTemplate;
         }
     </script>
 </body>
