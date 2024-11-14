@@ -15,7 +15,7 @@
         textarea, select, input { width: 100%; margin-top: 0.5em; padding: 0.5em; font-size: 1em; }
         button { margin-top: 1em; padding: 0.7em 1em; font-size: 1em; background-color: #2a3d5b; color: #fff; border: none; cursor: pointer; }
         button:hover { background-color: #1e2d47; }
-        #inputPreview { white-space: pre-wrap; font-family: monospace; background-color: #e8eef5; padding: 1em; border-radius: 5px; }
+        #inputPreview { white-space: pre-wrap; font-family: monospace; background-color: #e8eef5; padding: 1em; border-radius: 5px; height: 300px; resize: vertical; }
         #downloadLink { display: block; margin-top: 1em; color: #2a3d5b; text-decoration: none; font-weight: bold; }
     </style>
 </head>
@@ -40,6 +40,7 @@
                 <option value="tdhf_energy">TDHF Energy</option>
                 <option value="mrsf_tdhf_hess">MRSF-TDDFT Numerical Hessian</option>
                 <option value="meci_optimization">MRSF-TDDFT MECI Optimization</option>
+                <option value="rhf_dft_grad">RHF DFT Gradient</option>
             </select>
 
             <!-- Calculation Options -->
@@ -61,39 +62,52 @@
                 <option value="b3lyp">B3LYP</option>
             </select>
 
+            <label for="multiplicity">Multiplicity:</label>
+            <input type="number" id="multiplicity" value="1">
+
+            <label for="nstate">NState (for TDHF calculations):</label>
+            <input type="number" id="nstate" value="3">
+
             <button type="button" onclick="updateInputPreview()">Generate Input</button>
-            <button type="button" onclick="downloadInputFile()">Save Input</button>
+            <button type="button" onclick="downloadInputFile()">Save Input & Geometry</button>
         </div>
 
         <!-- Right Panel: Real-Time Input Preview -->
         <div class="panel right-panel">
             <h2>Generated Input</h2>
-            <pre id="inputPreview">
+            <textarea id="inputPreview" contenteditable="true">
 # OpenQP Input Preview
-            </pre>
+            </textarea>
             <a id="downloadLink" href="#" download="input_file.txt">Download Input File</a>
         </div>
     </div>
 
     <script>
         function getInputTemplate(template) {
-            // Modular template for each calculation type
+            const systemName = document.getElementById("systemName").value || "geo";
+            const charge = document.getElementById("charge").value;
+            const basis = document.getElementById("basis").value;
+            const functional = document.getElementById("functional").value;
+            const multiplicity = document.getElementById("multiplicity").value;
+            const nstate = document.getElementById("nstate").value;
+
+            // Templates for each calculation type
             switch(template) {
                 case "rhf_dft_energy":
                     return `
 [input]
-system=${document.getElementById("systemName").value || "geo"}.xyz
-charge=${document.getElementById("charge").value}
+system=${systemName}.xyz
+charge=${charge}
 runtype=energy
-functional=${document.getElementById("functional").value}
-basis=${document.getElementById("basis").value}
+functional=${functional}
+basis=${basis}
 method=hf
 
 [guess]
 type=huckel
 
 [scf]
-multiplicity=1
+multiplicity=${multiplicity}
 type=rhf
 
 [dftgrid]
@@ -102,29 +116,29 @@ rad_type=becke
                 case "tdhf_energy":
                     return `
 [input]
-system=${document.getElementById("systemName").value || "geo"}.xyz
-charge=${document.getElementById("charge").value}
+system=${systemName}.xyz
+charge=${charge}
 runtype=energy
-basis=${document.getElementById("basis").value}
+basis=${basis}
 method=tdhf
 
 [guess]
 type=huckel
 
 [scf]
-multiplicity=1
+multiplicity=${multiplicity}
 type=rhf
 
 [tdhf]
-nstate=3
+nstate=${nstate}
                     `;
                 case "mrsf_tdhf_hess":
                     return `
 [input]
-system=${document.getElementById("systemName").value || "geo"}.xyz
-charge=${document.getElementById("charge").value}
-functional=${document.getElementById("functional").value}
-basis=${document.getElementById("basis").value}
+system=${systemName}.xyz
+charge=${charge}
+functional=${functional}
+basis=${basis}
 runtype=hess
 method=tdhf
 
@@ -142,17 +156,17 @@ state=1
                 case "meci_optimization":
                     return `
 [input]
-system=${document.getElementById("systemName").value || "geo"}.xyz
+system=${systemName}.xyz
 runtype=meci
-functional=${document.getElementById("functional").value}
-charge=${document.getElementById("charge").value}
+functional=${functional}
+charge=${charge}
 method=tdhf
-basis=${document.getElementById("basis").value}
+basis=${basis}
 
 [scf]
 type=rohf
 maxit=50
-multiplicity=3
+multiplicity=${multiplicity}
 
 [tdhf]
 type=mrsf
@@ -168,24 +182,46 @@ energy_gap=1e-4
 rmsd_grad=5e-4
 max_grad=1e-3
                     `;
+                case "rhf_dft_grad":
+                    return `
+[input]
+system=${systemName}.xyz
+charge=${charge}
+basis=${basis}
+runtype=grad
+functional=${functional}
+method=hf
+
+[guess]
+type=huckel
+
+[scf]
+multiplicity=${multiplicity}
+type=rhf
+
+[properties]
+grad=0
+
+[dftgrid]
+rad_type=becke
+                    `;
             }
         }
 
         function updateInputPreview() {
-            // Get the selected template and generate the preview
             const template = document.getElementById("calcType").value;
             const inputContent = getInputTemplate(template).trim();
-            document.getElementById("inputPreview").textContent = inputContent;
+            document.getElementById("inputPreview").value = inputContent;
         }
 
         function downloadInputFile() {
-            // Get the input content from the preview
-            const inputContent = document.getElementById("inputPreview").textContent;
-            const blob = new Blob([inputContent], { type: "text/plain" });
+            const geometry = document.getElementById("geometry").value.trim();
+            const inputContent = document.getElementById("inputPreview").value;
+            const blob = new Blob([inputContent + "\n\nGeometry:\n" + geometry], { type: "text/plain" });
             const url = URL.createObjectURL(blob);
             const downloadLink = document.getElementById("downloadLink");
             downloadLink.href = url;
-            downloadLink.download = "input_file.txt";
+            downloadLink.download = `${document.getElementById("systemName").value || "geo"}_input.txt`;
             downloadLink.style.display = "block";
         }
     </script>
