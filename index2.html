@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenQP Input Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; display: flex; height: 100vh; margin: 0; background-color: #f0f4f8; color: #333; }
+        .container { display: flex; flex-direction: row; width: 100%; }
+        .panel { padding: 1em; overflow-y: auto; }
+        .left-panel { width: 50%; border-right: 2px solid #ddd; background-color: #fff; }
+        .right-panel { width: 50%; background-color: #f7f9fc; padding: 2em; }
+        h2, h3 { color: #2a3d5b; }
+        label { display: block; margin-top: 1em; font-weight: bold; }
+        textarea, select, input { width: 100%; margin-top: 0.5em; padding: 0.5em; font-size: 1em; }
+        button { margin-top: 1em; padding: 0.7em 1em; font-size: 1em; background-color: #2a3d5b; color: #fff; border: none; cursor: pointer; }
+        button:hover { background-color: #1e2d47; }
+        #inputPreview { white-space: pre-wrap; font-family: monospace; background-color: #e8eef5; padding: 1em; border-radius: 5px; height: 300px; resize: vertical; }
+        #downloadLinks { margin-top: 1em; }
+        #downloadLinks a { display: block; color: #2a3d5b; text-decoration: none; font-weight: bold; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Left Panel: Geometry Input and Options -->
+        <div class="panel left-panel">
+            <h2>OpenQP Input Generator</h2>
+
+            <!-- Geometry Input -->
+            <label for="geometry">Molecular Geometry (XYZ format):</label>
+            <textarea id="geometry" rows="6" placeholder="Paste XYZ geometry here"></textarea>
+            
+            <!-- System Name -->
+            <label for="systemName">System Name:</label>
+            <input type="text" id="systemName" placeholder="geo">
+
+            <!-- Calculation Template Selection -->
+            <label for="calcType">Calculation Template:</label>
+            <select id="calcType" onchange="updateInputPreview()">
+                <option value="rhf_dft_energy">RHF DFT Energy</option>
+                <option value="tdhf_energy">TDHF Energy</option>
+                <option value="mrsf_tdhf_hess">MRSF-TDDFT Numerical Hessian</option>
+                <option value="meci_optimization">MRSF-TDDFT MECI Optimization</option>
+                <option value="rhf_dft_grad">RHF DFT Gradient</option>
+            </select>
+
+            <!-- Calculation Options -->
+            <h3>Options</h3>
+            <label for="charge">Charge:</label>
+            <input type="number" id="charge" value="0">
+
+            <label for="basis">Basis Set:</label>
+            <select id="basis">
+                <option value="6-31g(d)">6-31G(d)</option>
+                <option value="cc-pVDZ">cc-pVDZ</option>
+                <option value="cc-pVTZ">cc-pVTZ</option>
+            </select>
+
+            <label for="functional">Functional:</label>
+            <select id="functional">
+                <option value="bhhlyp">BHHLYP</option>
+                <option value="pbe">PBE</option>
+                <option value="b3lyp">B3LYP</option>
+            </select>
+
+            <label for="multiplicity">Multiplicity:</label>
+            <input type="number" id="multiplicity" value="1">
+
+            <label for="nstate">NState (for TDHF calculations):</label>
+            <input type="number" id="nstate" value="3">
+
+            <button type="button" onclick="updateInputPreview()">Generate Input</button>
+            <button type="button" onclick="downloadFiles()">Save Input & Geometry</button>
+        </div>
+
+        <!-- Right Panel: Real-Time Input Preview -->
+        <div class="panel right-panel">
+            <h2>Generated Input</h2>
+            <textarea id="inputPreview" contenteditable="true">
+# OpenQP Input Preview
+            </textarea>
+            <div id="downloadLinks">
+                <a id="downloadInputLink" href="#" download="input_file.txt">Download Input File</a>
+                <a id="downloadGeoLink" href="#" download="geo.xyz">Download Geometry File</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function getInputTemplate(template) {
+            const systemName = document.getElementById("systemName").value || "geo";
+            const charge = document.getElementById("charge").value;
+            const basis = document.getElementById("basis").value;
+            const functional = document.getElementById("functional").value;
+            const multiplicity = document.getElementById("multiplicity").value;
+            const nstate = document.getElementById("nstate").value;
+
+            // Templates for each calculation type
+            switch(template) {
+                case "rhf_dft_energy":
+                    return `
+[input]
+system=${systemName}.xyz
+charge=${charge}
+runtype=energy
+functional=${functional}
+basis=${basis}
+method=hf
+
+[guess]
+type=huckel
+
+[scf]
+multiplicity=${multiplicity}
+type=rhf
+
+[dftgrid]
+rad_type=becke
+                    `;
+                case "tdhf_energy":
+                    return `
+[input]
+system=${systemName}.xyz
+charge=${charge}
+runtype=energy
+basis=${basis}
+method=tdhf
+
+[guess]
+type=huckel
+
+[scf]
+multiplicity=${multiplicity}
+type=rhf
+
+[tdhf]
+nstate=${nstate}
+                    `;
+                case "mrsf_tdhf_hess":
+                    return `
+[input]
+system=${systemName}.xyz
+charge=${charge}
+functional=${functional}
+basis=${basis}
+runtype=hess
+method=tdhf
+
+[scf]
+type=rohf
+multiplicity=3
+
+[tdhf]
+type=mrsf
+nstate=2
+
+[hess]
+state=1
+                    `;
+                case "meci_optimization":
+                    return `
+[input]
+system=${systemName}.xyz
+runtype=meci
+functional=${functional}
+charge=${charge}
+method=tdhf
+basis=${basis}
+
+[scf]
+type=rohf
+maxit=50
+multiplicity=${multiplicity}
+
+[tdhf]
+type=mrsf
+nstate=5
+
+[optimize]
+optimizer=bfgs
+maxit=50
+istate=1
+jstate=2
+energy_shift=1e-5
+energy_gap=1e-4
+rmsd_grad=5e-4
+max_grad=1e-3
+                    `;
+                case "rhf_dft_grad":
+                    return `
+[input]
+system=${systemName}.xyz
+charge=${charge}
+basis=${basis}
+runtype=grad
+functional=${functional}
+method=hf
+
+[guess]
+type=huckel
+
+[scf]
+multiplicity=${multiplicity}
+type=rhf
+
+[properties]
+grad=0
+
+[dftgrid]
+rad_type=becke
+                    `;
+            }
+        }
+
+        function updateInputPreview() {
+            const template = document.getElementById("calcType").value;
+            const inputContent = getInputTemplate(template).trim();
+            document.getElementById("inputPreview").value = inputContent;
+        }
+
+        function downloadFiles() {
+            // Download the input file
+            const systemName = document.getElementById("systemName").value || "geo";
+            const inputContent = document.getElementById("inputPreview").value;
+            const inputBlob = new Blob([inputContent], { type: "text/plain" });
+            const inputUrl = URL.createObjectURL(inputBlob);
+            const inputLink = document.getElementById("downloadInputLink");
+            inputLink.href = inputUrl;
+            inputLink.download = `${systemName}_input.txt`;
+            inputLink.style.display = "block";
+
+            // Download the geometry file
+            const geometry = document.getElementById("geometry").value.trim();
+            const geoBlob = new Blob([geometry], { type: "text/plain" });
+            const geoUrl = URL.createObjectURL(geoBlob);
+            const geoLink = document.getElementById("downloadGeoLink");
+            geoLink.href = geoUrl;
+            geoLink.download = `${systemName}.xyz`;
+            geoLink.style.display = "block";
+        }
+    </script>
+</body>
+</html>
