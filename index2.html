@@ -54,10 +54,7 @@
                         </select>
 
             <!-- Calculation Options -->
-            <h3>Options</h3>
-            <label for="charge">Charge:</label>
-            <input type="number" id="charge" value="0">
-
+            <h2>Options</h3>
             <label for="basisSearch">Basis Set:</label>
             <input type="text" id="basisSearch" placeholder="Search basis sets..." onkeyup="filterBasisOptions()">
             <select id="basis" size="5" onclick="selectBasisOption()">
@@ -859,6 +856,11 @@
             <p id="selectedFunctional">Selected Functional: None</p>
 
 
+
+            <label for="charge">Charge:</label>
+            <input type="number" id="charge" value="-1">
+
+
             <label for="multiplicity">Multiplicity:</label>
             <input type="number" id="multiplicity" value="1">
 
@@ -893,7 +895,7 @@
 
             // Templates for each calculation type
             switch(template) {
-                case "rhf_dft_energy":
+                case "dft_energy":
                     return `
 [input]
 system=${systemName}.xyz
@@ -913,6 +915,29 @@ type=rhf
 [dftgrid]
 rad_type=becke
                     `;
+                    case "dft_gradient":
+                        return `
+[input]
+system=${systemName}.xyz
+charge=${charge}
+basis=${basis}
+runtype=grad
+functional=${functional}
+method=hf
+
+[guess]
+type=huckel
+
+[scf]
+multiplicity=${multiplicity}
+type=rhf
+
+[properties]
+grad=0
+
+[dftgrid]
+rad_type=becke
+                 `;
                 case "tdhf_energy":
                     return `
 [input]
@@ -931,8 +956,134 @@ type=rhf
 
 [tdhf]
 nstate=${nstate}
+                `;
+                case "tdhf_gradient":
+                    return `
+[input]
+system=${systemName}.xyz
+charge=${charge}
+runtype=grad
+basis=${basis}
+method=tdhf
+
+[guess]
+type=huckel
+
+[scf]
+multiplicity=${multiplicity}
+type=rhf
+
+[tdhf]
+nstate=${nstate}
+                `;
+                case "sf-tddft_energy":
+                    return `
+[input]
+system=${systemName}.xyz
+charge=${charge}
+runtype=energy
+basis=${basis}
+functional=${functional}
+method=tdhf
+
+[guess]
+type=huckel
+
+[scf]
+multiplicity=${multiplicity}
+type=rohf
+
+[tdhf]
+type=sf
+nstate=${nstate}
                     `;
-                case "mrsf_tdhf_hess":
+                case "sf_tddft_gradient":
+                    return `
+[input]
+system=${systemName}.xyz
+charge=${charge}
+runtype=grad
+basis=${basis}
+functional=${functional}
+method=tdhf
+
+[guess]
+type=huckel
+
+[scf]
+multiplicity=${multiplicity}
+type=rohf
+
+[tdhf]
+type=sf
+nstate=${nstate}
+
+[properties]
+grad=3
+                    `;
+                case "mrsf-tddft_energy":
+                    return `
+[input]
+system=${systemName}.xyz
+charge=${charge}
+runtype=energy
+basis=${basis}
+functional=${functional}
+method=tdhf
+
+[guess]
+type=huckel
+
+[scf]
+multiplicity=${multiplicity}
+type=rohf
+
+[tdhf]
+type=mrsf
+nstate=${nstate}
+                    `;
+                case "mrsf-tddft_gradient":
+                    return `
+[input]
+system=${systemName}.xyz
+charge=${charge}
+runtype=grad
+basis=${basis}
+functional=${functional}
+method=tdhf
+
+[guess]
+type=huckel
+
+[scf]
+multiplicity=${multiplicity}
+type=rohf
+
+[tdhf]
+type=mrsf
+nstate=${nstate}
+
+[properties]
+grad=3
+                    `;
+                case "dft_numerical_hessian":
+                    return `
+[input]
+system=${systemName}.xyz
+charge=${charge}
+functional=${functional}
+basis=${basis}
+runtype=hess
+method=hf
+
+[scf]
+type=rhf
+multiplicity=${multiplicity}
+
+[hess]
+state=0
+                    `;
+                case "mrdf-tddft_numerical_hessian":
                     return `
 [input]
 system=${systemName}.xyz
@@ -944,16 +1095,84 @@ method=tdhf
 
 [scf]
 type=rohf
-multiplicity=3
+multiplicity=${multiplicity}
 
 [tdhf]
 type=mrsf
-nstate=2
+nstate=${nstate}
 
 [hess]
 state=1
                     `;
-                case "meci_optimization":
+                case "dft_optimization":
+                    return `
+[input]
+system=${systemName}.xyz
+charge=${charge}
+functional=${functional}
+basis=${basis}
+runtype=optimize
+method=hf
+
+[scf]
+type=rhf
+multiplicity=${multiplicity}
+
+[optimize]
+istate=0
+                    `;
+                case "mrsf-tddft_optimization":
+                    return `
+[input]
+system=${systemName}.xyz
+charge=${charge}
+functional=${functional}
+basis=${basis}
+runtype=optimize
+method=tdhf
+
+[scf]
+type=rohf
+multiplicity=${multiplicity}
+
+[tdhf]
+type=mrsf
+nstate=${nstate}
+
+[optimize]
+istate=1
+                    `;
+                case "mrsf-tddft_mep_optimization":
+                    return `
+[input]
+system=${systemName}.xyz
+runtype=mep
+functional=${functional}
+charge=${charge}
+method=tdhf
+basis=${basis}
+
+[scf]
+type=rohf
+maxit=50
+multiplicity=${multiplicity}
+
+[tdhf]
+type=mrsf
+nstate=5
+
+[optimize]
+optimizer=bfgs
+maxit=100
+mep_maxit=2
+istate=2
+energy_shift=1e-3
+step_size=0.1
+step_tol=0.01
+rmsd_grad=3e-3
+max_grad=5e-3
+                    `;
+                case "mrsf-tddft_meci_optimization":
                     return `
 [input]
 system=${systemName}.xyz
@@ -982,30 +1201,7 @@ energy_gap=1e-4
 rmsd_grad=5e-4
 max_grad=1e-3
                     `;
-                case "rhf_dft_grad":
-                    return `
-[input]
-system=${systemName}.xyz
-charge=${charge}
-basis=${basis}
-runtype=grad
-functional=${functional}
-method=hf
-
-[guess]
-type=huckel
-
-[scf]
-multiplicity=${multiplicity}
-type=rhf
-
-[properties]
-grad=0
-
-[dftgrid]
-rad_type=becke
-                    `;
-            }
+             }
         }
 
         function updateInputPreview() {
