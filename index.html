@@ -1,38 +1,247 @@
+<!-- 
+    OpenQP Input Generator
+    Developed by Alireza Lashkaripour
+    Date: Nov. 2024
+    Description: Web-based tool for generating input files for OpenQP.
+-->
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OpenQP Input Generator</title>
-    <style>
-        body { font-family: Arial, sans-serif; display: flex; height: 100vh; margin: 0; background-color: #f0f4f8; color: #333; }
-        .container { display: flex; flex-direction: row; width: 100%; }
-        .panel { padding: 1em; overflow-y: auto; }
-        .left-panel { width: 50%; border-right: 2px solid #ddd; background-color: #fff; }
-        .right-panel { width: 50%; background-color: #f7f9fc; padding: 2em; }
-        h2, h3 { color: #2a3d5b; }
-        label { display: block; margin-top: 1em; font-weight: bold; }
-        textarea, select, input { width: 100%; margin-top: 0.5em; padding: 0.5em; font-size: 1em; }
-        button { margin-top: 1em; padding: 0.7em 1em; font-size: 1em; background-color: #2a3d5b; color: #fff; border: none; cursor: pointer; }
-        button:hover { background-color: #1e2d47; }
-        #inputPreview { white-space: pre-wrap; font-family: monospace; background-color: #e8eef5; padding: 1em; border-radius: 5px; height: 300px; resize: vertical; }
-        #downloadLinks { margin-top: 1em; }
-        #downloadLinks a { display: block; color: #2a3d5b; text-decoration: none; font-weight: bold; margin-top: 5px; }
-    </style>
-</head>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>OpenQP Input Generator</title>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+        <style>
+/* Reset and Base Styles */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Source Sans Pro', Arial, sans-serif;
+        line-height: 1.6;
+        color: #2d3748;
+        background: #f4f5f7;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+    /* Header Styles */
+    header {
+        background: #1a202c;
+        color: #ffffff;
+        text-align: center;
+        padding: 1rem 0;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        border-bottom: 3px solid #2b6cb0;
+    }
+
+    header h1 {
+        font-size: 2rem;
+        font-weight: 600;
+        word-break: keep-all; /* Prevent text from breaking awkwardly */
+    }
+
+    header p {
+        font-size: 1rem;
+        margin-top: 0.4rem;
+        opacity: 0.9;
+    }
+
+    /* Main Layout */
+    .container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        max-width: 1200px;
+        margin: 1.5rem auto;
+        padding: 0 1rem;
+    }
+
+    .panel {
+        flex: 1;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        padding: 1rem 1.5rem;
+        min-width: 300px;
+        overflow-y: auto;
+        max-height: 600px;
+    }
+
+    /* Headings */
+    h2 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        color: #2b6cb0;
+        border-bottom: 2px solid #edf2f7;
+        padding-bottom: 0.5rem;
+    }
+
+    h3 {
+        font-size: 1.25rem;
+        margin-bottom: 0.5rem;
+        color: #4a5568;
+    }
+
+    /* Form Elements */
+    label {
+        display: block;
+        margin-bottom: 0.4rem;
+        font-weight: 600;
+        color: #4a5568;
+    }
+
+    input, textarea, select {
+        width: 100%;
+        padding: 0.75rem;
+        font-size: 0.9rem;
+        border: 1px solid #cbd5e0;
+        border-radius: 6px;
+        background: #f7fafc;
+        color: #2d3748;
+        margin-bottom: 1rem;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        -webkit-appearance: none; /* Fixes issues with dropdowns and inputs in Safari */
+    }
+
+    textarea {
+        resize: vertical;
+        min-height: 150px;
+        font-family: 'Courier New', monospace;
+    }
+
+    input:focus, textarea:focus, select:focus {
+        border-color: #3182ce;
+        box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.3);
+    }
+
+    /* Buttons */
+    button {
+        display: inline-block;
+        padding: 0.75rem 1.5rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #ffffff;
+        background: #3182ce;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.2s ease, transform 0.2s ease;
+        -webkit-tap-highlight-color: transparent; /* Removes tap highlight in Safari */
+    }
+
+    button:hover {
+        background: #2b6cb0;
+        transform: translateY(-2px);
+    }
+
+    button:active {
+        background: #1e4e8c;
+        transform: translateY(0);
+    }
+
+    /* Preview Area */
+    #inputPreview {
+        background: #edf2f7;
+        border: 1px solid #cbd5e0;
+        border-radius: 8px;
+        padding: 1rem;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+        color: #2d3748;
+        overflow-y: auto;
+        height: 250px;
+        white-space: pre-wrap;
+    }
+
+    /* Download Links */
+    #downloadLinks {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-top: 1rem;
+    }
+
+    #downloadLinks a {
+        padding: 0.75rem 1.25rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #ffffff;
+        background: #4c51bf;
+        text-decoration: none;
+        border-radius: 6px;
+        transition: background-color 0.2s ease, transform 0.2s ease;
+    }
+
+    #downloadLinks a:hover {
+        background: #3c366b;
+        transform: translateY(-2px);
+    }
+
+    #downloadLinks a:active {
+        background: #2a2b4d;
+        transform: translateY(0);
+    }
+
+    /* Scrollbar Styling */
+    .panel::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .panel::-webkit-scrollbar-thumb {
+        background: #cbd5e0;
+        border-radius: 4px;
+    }
+
+    .panel::-webkit-scrollbar-thumb:hover {
+        background: #a0aec0;
+    }
+
+    .panel::-webkit-scrollbar-track {
+        background: #f7fafc;
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+        .container {
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+        }
+    }
+
+        </style>
+    </head>
 <body>
+    <header>
+        <h1>OpenQP Input Generator</h1>
+        <p>A professional tool for creating and managing OpenQP inputs</p>
+    </header>
     <div class="container">
         <!-- Left Panel: Geometry Input and Options -->
         <div class="panel left-panel">
-            <h2>OpenQP Input Generator</h2>
+            <h2>Input Generator</h2>
 
-            <!-- Geometry Input -->
+        <!-- Geometry Input -->
             <label for="geometry">Molecular Geometry (XYZ format):</label>
-            <textarea id="geometry" rows="6" placeholder="Paste XYZ geometry here"></textarea>
+            <textarea id="geometry" rows="6" placeholder="Paste XYZ geometry here" oninput="updateInputPreview()"></textarea>
+            <label for="loadGeometry">Or Load XYZ File:</label>
+            <input type="file" id="loadGeometry" accept=".xyz" onchange="loadGeometryFromFile()" oninput="updateInputPreview()">
+
             
+
             <!-- System Name -->
-            <label for="systemName">System Name:</label>
-            <input type="text" id="systemName" placeholder="geo">
+            <label for="systemName">Project Name:</label>
+            <input type="text" id="systemName" placeholder="Enter system name (default: geo)" oninput="updateInputPreview()" >
 
             <!-- Calculation Template Selection -->
             <label for="calcType">Calculation Template:</label>
@@ -51,13 +260,13 @@
                 <option value="mrsf-tddft_optimization">MRSF-TDDFT OPTIMIZATION</option> 
                 <option value="mrsf-tddft_mep_optimization">MRSF-TDDFT MEP OPTIMIZATION</option>
                 <option value="mrsf-tddft_meci_optimization">MRSF-TDDFT MECI OPTIMIZATION</option>
-                        </select>
+            </select>
 
             <!-- Calculation Options -->
             <h2>Options</h3>
             <label for="basisSearch">Basis Set:</label>
             <input type="text" id="basisSearch" placeholder="Search basis sets..." onkeyup="filterBasisOptions()">
-            <select id="basis" size="5" onclick="selectBasisOption()">
+            <select id="basis" size="5" onclick="selectBasisOption()" oninput="updateInputPreview()">
                 <option value="2zapa-nr">2zapa-nr</option>
                 <option value="2zapa-nr-cv">2zapa-nr-cv</option>
                 <option value="3-21g">3-21G</option>
@@ -481,7 +690,7 @@
 
             <label for="functionalSearch">Functional:</label>
             <input type="text" id="functionalSearch" placeholder="Search functionals..." onkeyup="filterFunctionalOptions()">
-            <select id="functional" size="5" onclick="selectFunctionalOption()">
+            <select id="functional" size="5" onclick="selectFunctionalOption()" oninput="updateInputPreview()">
                 <option value="hfex">HFEX</option>
                 <option value="slater">SLATER</option>
                 <option value="teter">TETER</option>
@@ -858,43 +1067,64 @@
 
 
             <label for="charge">Charge:</label>
-            <input type="number" id="charge" value="-1">
+            <input type="number" id="charge" value="0"  oninput="updateInputPreview()">
 
 
             <label for="multiplicity">Multiplicity:</label>
-            <input type="number" id="multiplicity" value="1">
+            <input type="number" id="multiplicity" value="1"  oninput="updateInputPreview()">
 
             <label for="nstate">NState (for TDHF calculations):</label>
-            <input type="number" id="nstate" value="3">
+            <input type="number" id="nstate" value="3"  oninput="updateInputPreview()">
 
-            <button type="button" onclick="updateInputPreview()">Generate Input</button>
-            <button type="button" onclick="downloadFiles()">Save Input & Geometry</button>
         </div>
 
-        <!-- Right Panel: Real-Time Input Preview -->
+        <!-- Right Panel: Real-Time Input Preview and Save Button -->
         <div class="panel right-panel">
             <h2>Generated Input</h2>
             <textarea id="inputPreview" contenteditable="true">
-# OpenQP Input Preview
+ # OpenQP Input Preview
             </textarea>
-            <div id="downloadLinks">
-                <a id="downloadInputLink" href="#" download="input_file.txt">Download Input File</a>
-                <a id="downloadGeoLink" href="#" download="geo.xyz">Download Geometry File</a>
+            <button type="button" onclick="saveAndDownloadFiles()">Save Input & Geometry</button>
+            <div style="margin-top: 1.5em;">
+                <h3>Useful Links</h3>
+                <ul style="list-style-type: none; padding-left: 0; margin: 0;">
+                    <li style="margin-bottom: 0.5em;">
+                        <a href="https://github.com/Open-Quantum-Platform/openqp.git" target="_blank" style="color: #1d3557; text-decoration: none; font-weight: 500;">
+                            OpenQP Source Code
+                        </a>
+                    </li>
+                    <li style="margin-bottom: 0.5em;">
+                        <a href="https://github.com/Open-Quantum-Platform/openqp/wiki" target="_blank" style="color: #1d3557; text-decoration: none; font-weight: 500;">
+                            OpenQP Documentation Wiki
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.openqp.org/" target="_blank" style="color: #1d3557; text-decoration: none; font-weight: 500;">
+                            OpenQP Webpage
+                        </a>
+                    </li>
+                </ul>
             </div>
         </div>
-    </div>
 
     <script>
-        function getInputTemplate(template) {
-            const systemName = document.getElementById("systemName").value || "geo";
-            const charge = document.getElementById("charge").value;
-            const basis = document.getElementById("basis").value;
-            const functional = document.getElementById("functional").value;
-            const multiplicity = document.getElementById("multiplicity").value;
-            const nstate = document.getElementById("nstate").value;
+        function updateInputPreview() {
+            const systemName = document.getElementById("systemName").value ||"Geo";
+            const geometry = document.getElementById("geometry").value.trim() || "# Geometry not provided";
+            const charge = document.getElementById("charge").value || "0";
+            const multiplicity = document.getElementById("multiplicity").value || "1";
+            const functional = document.getElementById("functional").value || "bhhlyp";
+            const basis = document.getElementById("basis").value || "6-31g(d)";
+            const calcType = document.getElementById("calcType").value || "dft_energy";
+            const nstate = document.getElementById("nstate").value || "1";
 
-            // Templates for each calculation type
-            switch(template) {
+            const inputTemplate = getInputTemplate(calcType, systemName, geometry, charge, multiplicity, functional, basis);
+            document.getElementById("inputPreview").value = inputTemplate.trim();
+        }
+
+        function getInputTemplate(calcType, systemName, geometry, charge, multiplicity, functional, basis, nstate) {
+            switch (calcType) {
+                    // Templates for each calculation type
                 case "dft_energy":
                     return `
 [input]
@@ -1159,7 +1389,7 @@ multiplicity=${multiplicity}
 
 [tdhf]
 type=mrsf
-nstate=5
+nstate=${nstate}
 
 [optimize]
 optimizer=bfgs
@@ -1189,7 +1419,7 @@ multiplicity=${multiplicity}
 
 [tdhf]
 type=mrsf
-nstate=5
+nstate=${nstate}
 
 [optimize]
 optimizer=bfgs
@@ -1204,32 +1434,53 @@ max_grad=1e-3
              }
         }
 
-        function updateInputPreview() {
-            const template = document.getElementById("calcType").value;
-            const inputContent = getInputTemplate(template).trim();
-            document.getElementById("inputPreview").value = inputContent;
-        }
 
-        function downloadFiles() {
-            // Download the input file
+        function loadGeometryFromFile() {
+            const fileInput = document.getElementById("loadGeometry");
+            const geometryTextarea = document.getElementById("geometry");
+            const systemNameInput = document.getElementById("systemName");
+
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                const reader = new FileReader();
+
+                reader.onload = function(event) {
+                    geometryTextarea.value = event.target.result.trim();
+                    updateInputPreview(); 
+                };
+
+                reader.readAsText(file);
+
+                const fileNameWithoutExtension = file.name.replace(/\.xyz$/i, "");
+                systemNameInput.value = fileNameWithoutExtension;
+                updateInputPreview();
+            }
+        }
+                function saveAndDownloadFiles() {
             const systemName = document.getElementById("systemName").value || "geo";
+            
+            // Save and download input file
             const inputContent = document.getElementById("inputPreview").value;
             const inputBlob = new Blob([inputContent], { type: "text/plain" });
             const inputUrl = URL.createObjectURL(inputBlob);
-            const inputLink = document.getElementById("downloadInputLink");
+            const inputLink = document.createElement("a");
             inputLink.href = inputUrl;
-            inputLink.download = `${systemName}_input.txt`;
-            inputLink.style.display = "block";
+            inputLink.download = `${systemName}.inp`;
+            inputLink.click();
+            URL.revokeObjectURL(inputUrl);
 
-            // Download the geometry file
+            // Save and download geometry file
             const geometry = document.getElementById("geometry").value.trim();
             const geoBlob = new Blob([geometry], { type: "text/plain" });
             const geoUrl = URL.createObjectURL(geoBlob);
-            const geoLink = document.getElementById("downloadGeoLink");
+            const geoLink = document.createElement("a");
             geoLink.href = geoUrl;
             geoLink.download = `${systemName}.xyz`;
-            geoLink.style.display = "block";
+            geoLink.click();
+            URL.revokeObjectURL(geoUrl);
         }
+
+
         function filterBasisOptions() {
             const searchInput = document.getElementById("basisSearch").value.toLowerCase();
             const select = document.getElementById("basis");
