@@ -1132,16 +1132,16 @@ button:active {
             const functional = document.getElementById("functional").value || "bhhlyp";
             const basis = document.getElementById("basis").value || "6-31g(d)";
             const calcType = document.getElementById("calcType").value || "dft_energy";
-            const nstate = document.getElementById("nstate").value || "1";
+            const nstate = document.getElementById("nstate").value || "3";
             const istate = document.getElementById("istate").value || "1";
             const jstate = document.getElementById("jstate").value || "2";
 
 
-            const inputTemplate = getInputTemplate(calcType, systemName, geometry, charge, multiplicity, functional, basis, istate, jstate);
+            const inputTemplate = getInputTemplate(calcType, systemName, geometry, charge, multiplicity, functional, basis, nstate, istate, jstate);
             document.getElementById("inputPreview").value = inputTemplate.trim();
         }
 
-        function getInputTemplate(calcType, systemName, geometry, charge, multiplicity, functional, basis, nstate) {
+        function getInputTemplate(calcType, systemName, geometry, charge, multiplicity, functional, basis, nstate, istate, jstate) {
             switch (calcType) {
                     // Templates for each calculation type
                 case "dft_energy":
@@ -1443,8 +1443,8 @@ nstate=${nstate}
 [optimize]
 optimizer=bfgs
 maxit=50
-istate=1
-jstate=2
+istate=${istate}
+jstate=${jstate}
 energy_shift=1e-5
 energy_gap=1e-4
 rmsd_grad=5e-4
