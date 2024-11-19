@@ -692,10 +692,9 @@ button:active {
 
 
 
-            
             <label for="functionalSearch">Functional:</label>
-            <input type="text" id="functionalSearch" placeholder="Search functionals..." onkeyup="filterFunctionalOptions()">
-            <select id="functional" size="5" onclick="selectFunctionalOption()" oninput="updateInputPreview()">
+            <input type="text" id="functionalSearch" placeholder="Search functionals..." onfocus="showFunctionalDropdown()" onkeyup="filterFunctionalOptions()">
+            <select id="functional" size="5" style="display: none;" onclick="selectFunctionalOption()" onchange="updateInputPreview()"> 
                 <option value="hfex">HFEX</option>
                 <option value="slater">SLATER</option>
                 <option value="teter">TETER</option>
@@ -1069,15 +1068,17 @@ button:active {
             <p id="selectedFunctional">Selected Functional: None</p>
 
 
+            <div style="display: inline-block; margin-right: 10px;">
+                <label for="charge">Charge:</label>
+                <input type="number" id="charge" value="0" oninput="updateInputPreview()">
+            </div>
+            <div style="display: inline-block;">
+                <label for="multiplicity">Spin Multiplicity:</label>
+                <input type="number" id="multiplicity" value="1" oninput="updateInputPreview()">
+            </div>
 
-            <label for="charge">Charge:</label>
-            <input type="number" id="charge" value="0"  oninput="updateInputPreview()">
 
-
-            <label for="multiplicity">Multiplicity:</label>
-            <input type="number" id="multiplicity" value="1"  oninput="updateInputPreview()">
-
-            <label for="nstate">NState (for TDHF calculations):</label>
+            <label for="nstate">Number of States for Response Theories:</label>
             <input type="number" id="nstate" value="3"  oninput="updateInputPreview()">
 
         </div>
@@ -1513,22 +1514,36 @@ max_grad=1e-3
                 select.style.display = "none";
             }
         }
+        function showFunctionalDropdown() {
+            const dropdown = document.getElementById("functional");
+            dropdown.style.display = "block";
+        }
 
         function filterFunctionalOptions() {
             const searchInput = document.getElementById("functionalSearch").value.toLowerCase();
             const select = document.getElementById("functional");
             const options = select.options;
+
             select.selectedIndex = -1;
-        for (let i = 0; i < options.length; i++) {
-            const optionText = options[i].text.toLowerCase();
-            options[i].style.display = optionText.includes(searchInput) ? "" : "none";
-        }
+
+            for (let i = 0; i < options.length; i++) {
+                const optionText = options[i].text.toLowerCase();
+                if (optionText.includes(searchInput)) {
+                    options[i].style.display = "";
+                } else {
+                    options[i].style.display = "none";
+                }
+            }
         }
 
         function selectFunctionalOption() {
             const select = document.getElementById("functional");
-            const selectedValue = select.options[select.selectedIndex].text;
-            document.getElementById("selectedFunctional").innerText = `Selected Functional: ${selectedValue}`;
+            if (select.selectedIndex !== -1) {
+                const selectedValue = select.options[select.selectedIndex].text;
+                document.getElementById("functionalSearch").value = selectedValue;
+                document.getElementById("selectedFunctional").innerText = `Selected Functional: ${selectedValue}`;
+                select.style.display = "none";
+            }
         }
         </script>
 </body>
