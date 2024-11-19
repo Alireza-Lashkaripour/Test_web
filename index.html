@@ -1073,13 +1073,24 @@ button:active {
                 <input type="number" id="charge" value="0" oninput="updateInputPreview()">
             </div>
             <div style="display: inline-block;">
-                <label for="multiplicity">Spin Multiplicity:</label>
+                <label for="multiplicity">Multiplicity:</label>
                 <input type="number" id="multiplicity" value="1" oninput="updateInputPreview()">
             </div>
 
 
             <label for="nstate">Number of States for Response Theories:</label>
             <input type="number" id="nstate" value="3"  oninput="updateInputPreview()">
+
+            <div style="display: inline-block; margin-right: 10px;">
+                <label for="istate">Lower State for MECI Calculation:</label>
+                <input type="number" id="istate" value="1" oninput="updateInputPreview()">
+            </div>
+            <div style="display: inline-block;">
+                <label for="jstate">Upper State for MECI Calculation:</label>
+                <input type="number" id="jstate" value="2" oninput="updateInputPreview()">
+            </div>
+
+
 
         </div>
 
@@ -1122,8 +1133,11 @@ button:active {
             const basis = document.getElementById("basis").value || "6-31g(d)";
             const calcType = document.getElementById("calcType").value || "dft_energy";
             const nstate = document.getElementById("nstate").value || "1";
+            const istate = document.getElementById("istate").value || "1";
+            const jstate = document.getElementById("jstate").value || "2";
 
-            const inputTemplate = getInputTemplate(calcType, systemName, geometry, charge, multiplicity, functional, basis);
+
+            const inputTemplate = getInputTemplate(calcType, systemName, geometry, charge, multiplicity, functional, basis, istate, jstate);
             document.getElementById("inputPreview").value = inputTemplate.trim();
         }
 
