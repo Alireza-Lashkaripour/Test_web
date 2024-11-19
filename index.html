@@ -158,7 +158,7 @@ button:active {
     font-size: 0.9rem;
     color: #2d3748;
     overflow-y: auto;
-    height: 250px;
+    height: 500px;
     white-space: pre-wrap;
 }
 
@@ -219,8 +219,24 @@ button:active {
         max-width: calc(50% - 1rem); /* Divide space evenly on large screens */
     }
 }
+.viewer-section {
+    margin-bottom: 2em;
+    padding: 1em;
+    background: #fff;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}
+
+#viewer {
+    width: 100%;
+    height: 300px;
+    position: relative;
+    background: #f8f9fa;
+}
 
         </style>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.0.3/3Dmol-min.js"></script>
     </head>
 <body>
     <header>
@@ -1094,8 +1110,14 @@ button:active {
 
         </div>
 
-        <!-- Right Panel: Real-Time Input Preview and Save Button -->
+        <!-- Right Panel: Molecule Viewer, Real-Time Input Preview and Save Button -->
         <div class="panel right-panel">
+            <!-- New Molecule Viewer Section -->
+            <div class="viewer-section">
+                <h2>Molecule Viewer</h2>
+                <div id="viewer"></div>
+            </div>
+
             <h2>Generated Input</h2>
             <textarea id="inputPreview" contenteditable="true">
  # OpenQP Input Preview
@@ -1122,10 +1144,11 @@ button:active {
                 </ul>
             </div>
         </div>
-
     <script>
+        // Modified updateInputPreview function
         function updateInputPreview() {
-            const systemName = document.getElementById("systemName").value ||"Geo";
+            // Existing input gathering
+            const systemName = document.getElementById("systemName").value || "Geo";
             const geometry = document.getElementById("geometry").value.trim() || "# Geometry not provided";
             const charge = document.getElementById("charge").value || "0";
             const multiplicity = document.getElementById("multiplicity").value || "1";
@@ -1136,9 +1159,15 @@ button:active {
             const istate = document.getElementById("istate").value || "1";
             const jstate = document.getElementById("jstate").value || "2";
 
-
-            const inputTemplate = getInputTemplate(calcType, systemName, geometry, charge, multiplicity, functional, basis, nstate, istate, jstate);
+            // Update the input preview
+            const inputTemplate = getInputTemplate(calcType, systemName, geometry, charge, multiplicity, 
+                                                functional, basis, nstate, istate, jstate);
             document.getElementById("inputPreview").value = inputTemplate.trim();
+
+            // Update the 3D viewer with the geometry
+            if (geometry && geometry !== "# Geometry not provided") {
+                updateViewer(geometry);
+            }
         }
 
         function getInputTemplate(calcType, systemName, geometry, charge, multiplicity, functional, basis, nstate, istate, jstate) {
@@ -1454,28 +1483,33 @@ max_grad=1e-3
         }
 
 
+        // Modified loadGeometryFromFile function
         function loadGeometryFromFile() {
             const fileInput = document.getElementById("loadGeometry");
             const geometryTextarea = document.getElementById("geometry");
             const systemNameInput = document.getElementById("systemName");
-
+            
             if (fileInput.files.length > 0) {
                 const file = fileInput.files[0];
                 const reader = new FileReader();
-
+                
                 reader.onload = function(event) {
-                    geometryTextarea.value = event.target.result.trim();
+                    const content = event.target.result.trim();
+                    geometryTextarea.value = content;
+                    
+                    // Update both the input preview and the viewer
+                    updateInputPreview();
+                    
+                    // Set system name from file name
+                    const fileNameWithoutExtension = file.name.replace(/\.xyz$/i, "");
+                    systemNameInput.value = fileNameWithoutExtension;
                     updateInputPreview(); 
                 };
-
+                
                 reader.readAsText(file);
-
-                const fileNameWithoutExtension = file.name.replace(/\.xyz$/i, "");
-                systemNameInput.value = fileNameWithoutExtension;
-                updateInputPreview();
             }
-        }
-                function saveAndDownloadFiles() {
+        } 
+        function saveAndDownloadFiles() {
             const systemName = document.getElementById("systemName").value || "geo";
             
             // Save and download input file
@@ -1557,6 +1591,31 @@ max_grad=1e-3
                 document.getElementById("functionalSearch").value = selectedValue;
                 document.getElementById("selectedFunctional").innerText = `Selected Functional: ${selectedValue}`;
                 select.style.display = "none";
+            }
+        }
+        // Initialize the viewer when the document is ready
+        let viewer;
+        $(document).ready(function() {
+            viewer = $3Dmol.createViewer("viewer", {
+                backgroundColor: "white"
+            });
+            viewer.setStyle({}, {stick:{}});
+            viewer.zoomTo();
+            viewer.render();
+        });
+
+        // Function to update the 3D viewer
+        function updateViewer(xyzData) {
+            if (!xyzData || !viewer) return;
+            
+            try {
+                viewer.clear();
+                viewer.addModel(xyzData, "xyz");
+                viewer.setStyle({}, {stick:{radius: 0.1}, sphere:{radius: 0.3}});
+                viewer.zoomTo();
+                viewer.render();
+            } catch (error) {
+                console.warn("Failed to update molecule viewer:", error);
             }
         }
         </script>
