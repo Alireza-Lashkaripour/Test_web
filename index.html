@@ -242,10 +242,10 @@ button:active {
 
             <!-- System Name -->
             <label for="systemName">Project Name:</label>
-            <input type="text" id="systemName" placeholder="Enter system name (default: geo)" oninput="updateInputPreview()" >
+            <input type="text" id="systemName" placeholder="Enter Project Name (Default: geo)" oninput="updateInputPreview()" >
 
             <!-- Calculation Template Selection -->
-            <label for="calcType">Calculation Template:</label>
+            <label for="calcType">Calculation Type:</label>
             <select id="calcType" onchange="updateInputPreview()">
                 <option value="dft_energy">DFT ENERGY</option>
                 <option value="dft_gradient">DFT GRADIENT</option>
@@ -263,11 +263,13 @@ button:active {
                 <option value="mrsf-tddft_meci_optimization">MRSF-TDDFT MECI OPTIMIZATION</option>
             </select>
 
+
+
             <!-- Calculation Options -->
             <h2>Options</h3>
             <label for="basisSearch">Basis Set:</label>
-            <input type="text" id="basisSearch" placeholder="Search basis sets..." onkeyup="filterBasisOptions()">
-            <select id="basis" size="5" onclick="selectBasisOption()" oninput="updateInputPreview()">
+            <input type="text" id="basisSearch" placeholder="Search basis sets..."  onfocus="showDropdown()" onkeyup="filterBasisOptions()">
+            <select id="basis" size="5" style="display: none;"  onclick="selectBasisOption()" onchange="updateInputPreview()">
                 <option value="2zapa-nr">2zapa-nr</option>
                 <option value="2zapa-nr-cv">2zapa-nr-cv</option>
                 <option value="3-21g">3-21G</option>
@@ -689,6 +691,8 @@ button:active {
             <p id="selectedBasis">Selected Basis Set: None</p>
 
 
+
+            
             <label for="functionalSearch">Functional:</label>
             <input type="text" id="functionalSearch" placeholder="Search functionals..." onkeyup="filterFunctionalOptions()">
             <select id="functional" size="5" onclick="selectFunctionalOption()" oninput="updateInputPreview()">
@@ -1480,7 +1484,10 @@ max_grad=1e-3
             URL.revokeObjectURL(geoUrl);
         }
 
-
+        function showDropdown() {
+            const dropdown = document.getElementById("basis");
+            dropdown.style.display = "block";
+        }
         function filterBasisOptions() {
             const searchInput = document.getElementById("basisSearch").value.toLowerCase();
             const select = document.getElementById("basis");
@@ -1497,13 +1504,16 @@ max_grad=1e-3
                 }
             }
         }
-
         function selectBasisOption() {
             const select = document.getElementById("basis");
-            const selectedValue = select.options[select.selectedIndex].text;
-
-            document.getElementById("selectedBasis").innerText = `Selected Basis Set: ${selectedValue}`;
+            if (select.selectedIndex !== -1) {
+                const selectedValue = select.options[select.selectedIndex].text;
+                document.getElementById("basisSearch").value = selectedValue;
+                document.getElementById("selectedBasis").innerText = `Selected Basis Set: ${selectedValue}`;
+                select.style.display = "none";
+            }
         }
+
         function filterFunctionalOptions() {
             const searchInput = document.getElementById("functionalSearch").value.toLowerCase();
             const select = document.getElementById("functional");
